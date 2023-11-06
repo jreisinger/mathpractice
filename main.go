@@ -23,6 +23,8 @@ func main() {
 	http.ListenAndServe(":8000", nil)
 }
 
+const minXY = 2
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	t := template.New("layout")
 	tmpl := template.Must(t.Parse(layout))
@@ -33,10 +35,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var exercises []Exercise
-	exercises = append(exercises, plus(upto))
-	exercises = append(exercises, minus(upto))
-	exercises = append(exercises, div(upto))
-	exercises = append(exercises, mult(upto))
+	exercises = append(exercises, plus(upto, minXY))
+	exercises = append(exercises, minus(upto, minXY))
+	exercises = append(exercises, div(upto, minXY))
+	exercises = append(exercises, mult(upto, minXY))
 	data := Page{Exercises: exercises}
 	tmpl.Execute(w, data)
 }
@@ -55,14 +57,14 @@ func parseURLPath(path string) (upto int, err error) {
 	return upto, nil
 }
 
-func plus(upto int) Exercise {
+func plus(upto int, minXY int) Exercise {
 	if upto <= 0 {
 		return Exercise{}
 	}
 	x := rand.Intn(upto)
 	y := rand.Intn(upto)
 	result := x + y
-	for result > upto {
+	for result > upto || (x < minXY || y < minXY) {
 		x = rand.Intn(upto)
 		y = rand.Intn(upto)
 		result = x + y
@@ -75,14 +77,14 @@ func plus(upto int) Exercise {
 	}
 }
 
-func minus(upto int) Exercise {
+func minus(upto int, minXY int) Exercise {
 	if upto <= 0 {
 		return Exercise{}
 	}
 	x := rand.Intn(upto)
 	y := rand.Intn(upto)
 	result := x - y
-	for result < 0 || result > upto {
+	for result > upto || x < y || x == y || (x < minXY || y < minXY) {
 		x = rand.Intn(upto)
 		y = rand.Intn(upto)
 		result = x - y
@@ -95,17 +97,17 @@ func minus(upto int) Exercise {
 	}
 }
 
-func div(upto int) Exercise {
+func div(upto int, minXY int) Exercise {
 	if upto <= 0 {
 		return Exercise{}
 	}
 	x := rand.Intn(upto)
 	y := rand.Intn(upto)
-	for y == 0 {
+	for y == 0 { // avoid division by zero error
 		y = rand.Intn(upto)
 	}
 	result := x / y
-	for result > upto || x%y != 0 {
+	for result > upto || x%y != 0 || x == y || (x < minXY || y < minXY) {
 		x = rand.Intn(upto)
 		y = rand.Intn(upto)
 		for y == 0 {
@@ -121,14 +123,14 @@ func div(upto int) Exercise {
 	}
 }
 
-func mult(upto int) Exercise {
+func mult(upto int, minXY int) Exercise {
 	if upto <= 0 {
 		return Exercise{}
 	}
 	x := rand.Intn(upto)
 	y := rand.Intn(upto)
 	result := x * y
-	for result > upto {
+	for result > upto || (x < minXY || y < minXY) {
 		x = rand.Intn(upto)
 		y = rand.Intn(upto)
 		result = x * y
