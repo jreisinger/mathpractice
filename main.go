@@ -28,47 +28,52 @@ const minXY = 2
 func handler(w http.ResponseWriter, r *http.Request) {
 	t := template.New("layout")
 	tmpl := template.Must(t.Parse(layout))
-	upto, err := parseURLPath(r.URL.Path)
+	maxXY, err := parseInput(r.URL.Path)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, err)
 		return
 	}
 	var exercises []Exercise
-	exercises = append(exercises, plus(upto, minXY))
-	exercises = append(exercises, minus(upto, minXY))
-	exercises = append(exercises, div(upto, minXY))
-	exercises = append(exercises, mult(upto, minXY))
+	exercises = append(exercises, plus(minXY, maxXY))
+	exercises = append(exercises, minus(minXY, maxXY))
+	exercises = append(exercises, div(minXY, maxXY))
+	exercises = append(exercises, mult(minXY, maxXY))
 	data := Page{Exercises: exercises}
 	tmpl.Execute(w, data)
 }
 
-// parseURLPath parses path into an integer number. The number must be greater
-// than 0 and less then thousand. It's meant to sanitize user input.
-func parseURLPath(path string) (upto int, err error) {
-	s := strings.TrimPrefix(path, "/")
+// parseInput parses input string into an integer number. If input cannot be
+// converted to a number greater than 0 and less then thousand, an error is
+// returned. The function is meant to sanitize the user input.
+func parseInput(input string) (upto int, err error) {
+	s := strings.TrimPrefix(input, "/")
 	upto, err = strconv.Atoi(s)
 	if err != nil {
-		return 0, fmt.Errorf("URL path %q is not an integer", s)
+		return 0, fmt.Errorf("URL path %q can't be converted into an integer", s)
 	}
 	if upto <= 0 || upto > 1000 {
-		return 0, fmt.Errorf("URL path %q is not an integer greater than 0 and less than 1000", s)
+		return 0, fmt.Errorf("URL path %q can't be converted into an integer greater than 0 and less than 1000", s)
 	}
 	return upto, nil
 }
 
-func plus(upto int, minXY int) Exercise {
-	if upto <= 0 {
-		return Exercise{}
+// randInt returns a random integer in the half-open interval [min, max). If min
+// > max, 0 is returned.
+func randInt(min, max int) int {
+	if min > max {
+		return 0
 	}
-	x := rand.Intn(upto)
-	y := rand.Intn(upto)
+	if min == max { // exact number
+		return min
+	}
+	return rand.Intn(max-min) + min
+}
+
+func plus(minXY, maxXY int) Exercise {
+	x := randInt(minXY, maxXY)
+	y := randInt(minXY, maxXY)
 	result := x + y
-	for result > upto || (x < minXY || y < minXY) {
-		x = rand.Intn(upto)
-		y = rand.Intn(upto)
-		result = x + y
-	}
 	return Exercise{
 		Sign:   "+",
 		X:      x,
@@ -77,18 +82,10 @@ func plus(upto int, minXY int) Exercise {
 	}
 }
 
-func minus(upto int, minXY int) Exercise {
-	if upto <= 0 {
-		return Exercise{}
-	}
-	x := rand.Intn(upto)
-	y := rand.Intn(upto)
+func minus(minXY, maxXY int) Exercise {
+	y := randInt(minXY, maxXY)
+	x := randInt(y, maxXY)
 	result := x - y
-	for result > upto || x < y || x == y || (x < minXY || y < minXY) {
-		x = rand.Intn(upto)
-		y = rand.Intn(upto)
-		result = x - y
-	}
 	return Exercise{
 		Sign:   "-",
 		X:      x,
@@ -97,24 +94,17 @@ func minus(upto int, minXY int) Exercise {
 	}
 }
 
-func div(upto int, minXY int) Exercise {
-	if upto <= 0 {
-		return Exercise{}
-	}
-	x := rand.Intn(upto)
-	y := rand.Intn(upto)
-	for y == 0 { // avoid division by zero error
-		y = rand.Intn(upto)
+func div(minXY, maxXY int) Exercise {
+	x := randInt(minXY, maxXY)
+	y := randInt(minXY, maxXY)
+	for y == 0 || x%y != 0 {
+		if x == 0 && y == 0 { // to avoid infinite loop
+			return Exercise{Sign: ":"}
+		}
+		x = randInt(minXY, maxXY)
+		y = randInt(minXY, maxXY)
 	}
 	result := x / y
-	for result > upto || x%y != 0 || x == y || (x < minXY || y < minXY) {
-		x = rand.Intn(upto)
-		y = rand.Intn(upto)
-		for y == 0 {
-			y = rand.Intn(upto)
-		}
-		result = x / y
-	}
 	return Exercise{
 		Sign:   ":",
 		X:      x,
@@ -123,18 +113,10 @@ func div(upto int, minXY int) Exercise {
 	}
 }
 
-func mult(upto int, minXY int) Exercise {
-	if upto <= 0 {
-		return Exercise{}
-	}
-	x := rand.Intn(upto)
-	y := rand.Intn(upto)
+func mult(minXY, maxXY int) Exercise {
+	x := randInt(minXY, maxXY)
+	y := randInt(minXY, maxXY)
 	result := x * y
-	for result > upto || (x < minXY || y < minXY) {
-		x = rand.Intn(upto)
-		y = rand.Intn(upto)
-		result = x * y
-	}
 	return Exercise{
 		Sign:   "x",
 		X:      x,
