@@ -38,7 +38,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	exercises = append(exercises, plus(minXY, maxXY))
 	exercises = append(exercises, minus(minXY, maxXY))
 	exercises = append(exercises, div(minXY, maxXY))
-	exercises = append(exercises, mult(minXY, maxXY))
+	exercises = append(exercises, mult(minXY, maxXY/2))
 	data := Page{Exercises: exercises}
 	tmpl.Execute(w, data)
 }
