@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -20,7 +21,9 @@ type Page struct {
 
 func main() {
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8000", nil)
+	addr := "localhost:8000"
+	log.Printf("starting to listen at http://%s", addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 const minXY = 2
@@ -97,7 +100,7 @@ func minus(minXY, maxXY int) Exercise {
 func div(minXY, maxXY int) Exercise {
 	x := randInt(minXY, maxXY)
 	y := randInt(minXY, maxXY)
-	for y == 0 || x%y != 0 {
+	for y == 0 || x%y != 0 || x == y {
 		if x == 0 && y == 0 { // to avoid infinite loop
 			return Exercise{Sign: ":"}
 		}
